@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scholar Extract — Google Scholar Profile Data Extractor</title>
+  <meta name="description" content="Extract publications, h-index, citations and all metadata from any Google Scholar profile. Download as CSV and JSON." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-logo">
+      <div class="logo-icon">📚</div>
+    </div>
+    <h1>Scholar Extract</h1>
+    <p class="header-subtitle">
+      Extract publications, h-index, citations &amp; all metadata from any Google Scholar profile — export as CSV &amp; JSON.
+    </p>
+  </header>
+
+  <!-- ── Input Card ─────────────────────────────────────────────── -->
+  <div class="card">
+    <div class="input-section">
+      <label class="input-label" for="profile-url-input">Google Scholar Profile URL</label>
+      <div class="input-wrapper">
+        <input
+          id="profile-url-input"
+          class="url-input"
+          type="url"
+          placeholder="https://scholar.google.com/citations?user=JicYPdAAAAAJ"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="extract-btn" class="extract-btn" onclick="startExtraction()">
+          <span id="btn-icon">🔍</span>
+          <span id="btn-text">Extract</span>
+        </button>
+      </div>
+
+      <div class="options-row">
+        <label class="toggle-label" for="fill-all-toggle">
+          <input type="checkbox" id="fill-all-toggle" class="toggle-input" checked />
+          <span class="toggle-track"></span>
+          <div>
+            <div class="toggle-text">Full details mode</div>
+            <div class="toggle-hint">Fetches complete data per paper (slower, recommended)</div>
+          </div>
+        </label>
+        <label class="toggle-label" for="proxy-toggle">
+          <input type="checkbox" id="proxy-toggle" class="toggle-input" />
+          <span class="toggle-track"></span>
+          <div>
+            <div class="toggle-text">Use Free Proxy</div>
+            <div class="toggle-hint">Helps if Google Scholar is blocking requests</div>
+          </div>
+        </label>
+      </div>
+
+      <!-- ScraperAPI key -->
+      <div class="api-key-row">
+        <label class="input-label" for="scraper-api-input" style="margin-bottom:6px;">
+          ScraperAPI Key <span style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0;">(required if Google Scholar blocks you &mdash; <a href="https://www.scraperapi.com/" target="_blank" style="color:var(--blue-light);">get free key</a>)</span>
+        </label>
+        <input
+          id="scraper-api-input"
+          class="url-input"
+          type="password"
+          placeholder="Paste your ScraperAPI key here..."
+          autocomplete="off"
+          style="font-size:14px;"
+        />
+      </div>
+    </div>
+
+    <!-- ── Progress ─────────────────────────────────────────────── -->
+    <div id="progress-section">
+      <!-- Stage steps -->
+      <div class="stage-steps" id="stage-steps">
+        <div class="stage-step" id="step-connecting" data-stage="connecting">
+          <div class="step-dot"></div>
+          <span>Connecting</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="stage-step" id="step-loading" data-stage="loading">
+          <div class="step-dot"></div>
+          <span>Loading Profile</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="stage-step" id="step-fetching" data-stage="fetching_pubs">
+          <div class="step-dot"></div>
+          <span>Fetching Publications</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="stage-step" id="step-done" data-stage="done">
+          <div class="step-dot"></div>
+          <span>Complete</span>
+        </div>
+      </div>
+
+      <div class="progress-header">
+        <span class="progress-status" id="progress-status">Initializing…</span>
+        <span class="progress-count" id="progress-count"></span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar"></div>
+      </div>
+      <div class="progress-message" id="progress-message"></div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-box" id="error-box">
+      <div id="error-main"></div>
+      <div id="error-hint" style="margin-top:10px;font-size:12px;color:#ffab91;"></div>
+      <div id="rate-limit-timer" style="display:none;margin-top:14px;">
+        <div style="font-size:13px;color:#80cbc4;margin-bottom:6px;">Estimated wait before retry:</div>
+        <div style="font-size:28px;font-weight:800;color:#80cbc4;font-variant-numeric:tabular-nums;" id="countdown-display">15:00</div>
+        <button onclick="startExtraction()" style="margin-top:12px;background:rgba(38,198,218,0.15);border:1px solid rgba(38,198,218,0.4);color:#80cbc4;font-family:Inter,sans-serif;font-size:13px;padding:8px 18px;border-radius:8px;cursor:pointer;">Retry Now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Results ───────────────────────────────────────────────── -->
+  <div id="results-section">
+
+    <!-- Profile Card -->
+    <div class="section-title">Author Profile</div>
+    <div class="profile-card" id="profile-card">
+      <div class="profile-info">
+        <h2 id="prof-name">—</h2>
+        <div class="profile-affiliation" id="prof-affiliation"></div>
+        <div class="interest-tags" id="prof-interests"></div>
+      </div>
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div class="metric-value" id="m-citations">—</div>
+          <div class="metric-label">Citations</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value" id="m-hindex">—</div>
+          <div class="metric-label">h-index</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value" id="m-i10">—</div>
+          <div class="metric-label">i10-index</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-value" id="m-pubs">—</div>
+          <div class="metric-label">Publications</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Downloads -->
+    <div class="download-section">
+      <div class="section-title" style="margin-top:24px">Download Your Data</div>
+      <div class="download-grid">
+
+        <a id="dl-pub-csv" class="download-btn" href="#" onclick="downloadFile('publications_csv', event)">
+          <div class="download-icon csv">📊</div>
+          <div class="download-info">
+            <div class="download-name">publications.csv</div>
+            <div class="download-desc">All publications with typed fields</div>
+          </div>
+        </a>
+
+        <a id="dl-pub-json" class="download-btn" href="#" onclick="downloadFile('publications_json', event)">
+          <div class="download-icon json">{ }</div>
+          <div class="download-info">
+            <div class="download-name">publications.json</div>
+            <div class="download-desc">Typed Publication schema (journal / conference / patent…)</div>
+          </div>
+        </a>
+
+        <a id="dl-profile-csv" class="download-btn" href="#" onclick="downloadFile('profile_csv', event)">
+          <div class="download-icon profile">👤</div>
+          <div class="download-info">
+            <div class="download-name">profile_summary.csv</div>
+            <div class="download-desc">Author metrics &amp; metadata</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- Publications Preview -->
+    <div class="publications-section">
+      <div class="pub-controls">
+        <div class="section-title" style="margin-bottom:0">Publications</div>
+        <span class="pub-count-badge">
+          📄 <span id="pub-total-count">0</span> total
+        </span>
+        <div class="filter-btns" id="filter-btns">
+          <button class="filter-btn active" data-type="all" onclick="filterPubs(this)">All</button>
+          <button class="filter-btn" data-type="journal" onclick="filterPubs(this)">Journal</button>
+          <button class="filter-btn" data-type="conference" onclick="filterPubs(this)">Conference</button>
+          <button class="filter-btn" data-type="patent-granted" onclick="filterPubs(this)">Patent</button>
+          <button class="filter-btn" data-type="book-authored" onclick="filterPubs(this)">Book</button>
+        </div>
+      </div>
+      <div class="pub-list" id="pub-list"></div>
+      <button class="show-more-btn" id="show-more-btn" onclick="showMore()" style="display:none">
+        Show more publications ↓
+      </button>
+    </div>
+
+  </div><!-- /results-section -->
+
+  <footer class="footer">
+    Powered by <a href="https://scholarly.readthedocs.io/" target="_blank">scholarly</a> &amp; Flask &nbsp;·&nbsp;
+    Data sourced from <a href="https://scholar.google.com" target="_blank">Google Scholar</a>
+  </footer>
+
+</div><!-- /container -->
+
+<script src="app.js"></script>
+</body>
+</html>
