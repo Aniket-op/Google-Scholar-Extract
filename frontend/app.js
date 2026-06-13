@@ -11,7 +11,12 @@
 'use strict';
 
 // ── Config ───────────────────────────────────────────────────────
-const API_BASE  = 'http://localhost:5000/api';
+// On Vercel the frontend and API share the same origin (vercel.json routes
+// /api/* to the Python function), so we use a relative /api base.
+// When running locally via `python app.py`, fall back to the Flask dev server.
+const API_BASE  = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://localhost:5000/api'
+  : `${location.origin}/api`;
 const PAGE_SIZE = 20;
 const POLL_MS   = 1500;
 

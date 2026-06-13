@@ -28,7 +28,19 @@ from scraper import fetch_profile
 # ─── App setup ────────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).parent
-FRONTEND_DIR = BASE_DIR.parent / "frontend"
+
+# Locate frontend/ by walking up from this file's directory.
+# Works when launched from backend/ locally and when imported from api/ on Vercel.
+def _find_frontend_dir(start: Path) -> Path:
+    candidate = start
+    for _ in range(4):                     # look up at most 4 levels
+        f = candidate / "frontend"
+        if f.is_dir():
+            return f
+        candidate = candidate.parent
+    return start.parent / "frontend"       # best-guess fallback
+
+FRONTEND_DIR = _find_frontend_dir(BASE_DIR)
 
 # Default ScraperAPI key — used automatically if none is provided in the request
 DEFAULT_SCRAPER_API_KEY = "181b5badff311b3ad954f238cdcf5be3"

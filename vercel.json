@@ -1,0 +1,37 @@
+{
+  "version": 2,
+
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
+    },
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
+    }
+  ],
+
+  "routes": [
+    { "src": "/api/(.*)", "dest": "api/index.py" },
+    { "src": "/style.css",  "dest": "frontend/style.css" },
+    { "src": "/app.js",     "dest": "frontend/app.js" },
+    { "src": "/(.*\\.(?:css|js|ico|png|jpg|svg|woff2?))", "dest": "frontend/$1" },
+    { "src": "/",           "dest": "frontend/index.html" },
+    { "src": "/(.*)",       "dest": "frontend/index.html" }
+  ],
+
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 300,
+      "memory": 1024
+    }
+  },
+
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  }
+}
