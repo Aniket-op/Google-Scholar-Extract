@@ -1,6 +1,7 @@
-# Root-level requirements.txt — read by Vercel's Python builder
+# Root-level requirements.txt — read by Render and Vercel's Python builder
 # Keep in sync with backend/requirements.txt
 
+gunicorn>=21.0.0
 flask>=3.0.0
 flask-cors>=4.0.0
 scholarly>=1.7.11

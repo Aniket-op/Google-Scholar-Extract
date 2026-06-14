@@ -1,3 +1,4 @@
+gunicorn>=21.0.0
 flask>=3.0.0
 flask-cors>=4.0.0
 scholarly>=1.7.11

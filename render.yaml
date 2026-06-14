@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: google-scholar-extractor
+    runtime: python
+    region: oregon
+
+    # ── Build ──────────────────────────────────────────────────────
+    buildCommand: pip install -r requirements.txt
+
+    # ── Start ─────────────────────────────────────────────────────
+    # --chdir backend   → all backend modules (app.py, scraper.py, etc.) are here
+    # --workers 2       → handle multiple simultaneous requests
+    # --threads 4       → each worker handles 4 threads (background jobs run here)
+    # --timeout 300     → 5 min timeout — critical for long scraping jobs
+    # --bind 0.0.0.0:$PORT → Render injects $PORT dynamically
+    startCommand: gunicorn --chdir backend app:app --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 300
+
+    # ── Plan ──────────────────────────────────────────────────────
+    plan: free
+
+    # ── Environment variables ─────────────────────────────────────
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
